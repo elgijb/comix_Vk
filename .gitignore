@@ -1,0 +1,56 @@
+# Byte-compiled files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environments
+venv/
+env/
+.virtualenv/
+*.env
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# IDE settings
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Python egg files
+*.egg
+*.egg-info/
+dist/
+build/
+*.manifest
+
+# Files created during runtime
+Files/
+*.sqlite3
+
+# Environment variables
+.env
+
+# Testing-related files
+.coverage
+.tox/
+nosetests.xml
+coverage.xml
+*.pytest_cache/
+
+# System backups and caches
+*.bak
+*.swp
+*.swo
+
+# Documentation
+*.rst~
+*.md~
+*.doc~
