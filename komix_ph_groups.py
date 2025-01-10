@@ -26,14 +26,25 @@ def main():
             raise Exception(f"VK API Error: {response['error']['error_msg']}")
         return response
 
-    def download_picture(picture_url, folder="Files"):
-        file_name = os.path.basename(urlsplit(picture_url).path)
-        os.makedirs(folder, exist_ok=True)
+    def create_folder(folder):
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+
+    def download_file(picture_url):
         response = requests.get(picture_url)
         response.raise_for_status()
+        return response.content
+
+    def save_picture(file_content, folder, file_name):
         file_path = os.path.join(folder, file_name)
         with open(file_path, "wb") as file:
-            file.write(response.content)
+            file.write(file_content)
+
+    def download_picture(picture_url, folder="Files"):
+        create_folder(folder)
+        file_name = os.path.basename(urlsplit(picture_url).path)
+        file_content = download_file(picture_url)
+        save_picture(file_content, folder, file_name)
         return file_name
 
     def get_upload_url(access_token, group_id):
@@ -54,7 +65,7 @@ def main():
         response.raise_for_status()
         return response.json()
 
-    def save_picture(server, _hash, photo, access_token, group_id):
+    def save_picture_on_vk(server, _hash, photo, access_token, group_id):
         params = {
             "access_token": access_token,
             "v": VK_API_VERSION,
@@ -99,7 +110,7 @@ def main():
         os.remove(os.path.join("Files", file_name))
 
         print("Сохранение изображения...")
-        owner_id, attachment_id = save_picture(
+        owner_id, attachment_id = save_picture_on_vk(
             upload_response["server"],
             upload_response["hash"],
             upload_response["photo"],
