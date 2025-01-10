@@ -10,8 +10,8 @@ VK_API_VERSION = "5.131"
 def main():
     load_dotenv()
     try:
-        ACCESS_TOKEN = os.environ["ACCESS_TOKEN"]
-        CLIENT_ID = os.environ["CLIENT_ID"]
+        VK_ACCESS_TOKEN = os.environ["VK_ACCESS_TOKEN"]
+        VK_CLIENT_ID = os.environ["VK_CLIENT_ID"]
     except KeyError as e:
         raise KeyError(f"Обязательная переменная окружения {str(e)} не установлена.")
 
@@ -91,7 +91,7 @@ def main():
         file_name = download_picture(comic_img_url)
 
         print("Получение URL для загрузки на сервер ВКонтакте...")
-        upload_url = get_upload_url(ACCESS_TOKEN, CLIENT_ID)
+        upload_url = get_upload_url(VK_ACCESS_TOKEN, VK_CLIENT_ID)
 
         print("Загрузка изображения на сервер...")
         upload_response = upload_picture(file_name, upload_url)
@@ -103,12 +103,12 @@ def main():
             upload_response["server"],
             upload_response["hash"],
             upload_response["photo"],
-            ACCESS_TOKEN,
-            CLIENT_ID
+            VK_ACCESS_TOKEN,
+            VK_CLIENT_ID
         )
 
         print("Публикация изображения на стене группы...")
-        publish_picture_on_wall(owner_id, attachment_id, comic_alt_text, ACCESS_TOKEN, CLIENT_ID)
+        publish_picture_on_wall(owner_id, attachment_id, comic_alt_text, VK_ACCESS_TOKEN, VK_CLIENT_ID)
 
         print("Публикация завершена успешно!")
     except Exception as error:
