@@ -10,8 +10,11 @@ VK_API_VERSION = "5.131"
 
 def main():
     load_dotenv()
-    ACCESS_TOKEN = os.getenv("ACCESS_TOKEN") 
-    CLIENT_ID = os.getenv("CLIENT_ID")        
+    try:
+        ACCESS_TOKEN = os.environ["ACCESS_TOKEN"]
+        CLIENT_ID = os.environ["CLIENT_ID"]
+    except KeyError as e:
+        raise KeyError(f"Обязательная переменная окружения {str(e)} не установлена.")
 
     def get_comic():
         url = "https://xkcd.com/info.0.json" 
@@ -114,3 +117,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
