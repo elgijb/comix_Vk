@@ -4,7 +4,6 @@ import requests
 from urllib.parse import urlsplit
 from dotenv import load_dotenv
 
-
 VK_API_URL = "https://api.vk.com/method"
 VK_API_VERSION = "5.131"
 
@@ -17,7 +16,7 @@ def main():
         raise KeyError(f"Обязательная переменная окружения {str(e)} не установлена.")
 
     def get_comic():
-        url = "https://xkcd.com/info.0.json" 
+        url = "https://xkcd.com/info.0.json"
         response = requests.get(url)
         response.raise_for_status()
         return response.json()
@@ -85,8 +84,8 @@ def main():
 
     try:
         comic = get_comic()
-        comic_img_url = comic["img"] 
-        comic_alt_text = comic["alt"]  
+        comic_img_url = comic["img"]
+        comic_alt_text = comic["alt"]
 
         print("Скачивание изображения...")
         file_name = download_picture(comic_img_url)
@@ -117,4 +116,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
