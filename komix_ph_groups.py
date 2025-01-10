@@ -66,8 +66,8 @@ def main():
             raise
 
     def upload_picture(file_name, upload_url, folder="Files"):
+        file_path = os.path.join(folder, file_name)
         try:
-            file_path = os.path.join(folder, file_name)
             with open(file_path, "rb") as file:
                 files = {"photo": file}
                 response = requests.post(upload_url, files=files)
