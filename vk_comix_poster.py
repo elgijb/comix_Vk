@@ -7,19 +7,16 @@ from dotenv import load_dotenv
 VK_API_URL = "https://api.vk.com/method"
 VK_API_VERSION = "5.131"
 
-
 def get_comic():
     url = "https://xkcd.com/info.0.json"
     response = requests.get(url)
     response.raise_for_status()
     return response.json()
 
-
 def check_vk_errors(response):
     if "error" in response:
         raise Exception(f"VK API Error: {response['error']['error_msg']}")
     return response
-
 
 def download_picture(picture_url, folder="Files"):
     file_name = os.path.basename(urlsplit(picture_url).path)
@@ -31,7 +28,6 @@ def download_picture(picture_url, folder="Files"):
         file.write(response.content)
     return file_name
 
-
 def get_upload_url(access_token, group_id):
     params = {
         "access_token": access_token,
@@ -42,7 +38,6 @@ def get_upload_url(access_token, group_id):
     response.raise_for_status()
     return check_vk_errors(response.json())["response"]["upload_url"]
 
-
 def upload_picture(file_name, upload_url, folder="Files"):
     file_path = os.path.join(folder, file_name)
     with open(file_path, "rb") as file:
@@ -50,7 +45,6 @@ def upload_picture(file_name, upload_url, folder="Files"):
         response = requests.post(upload_url, files=files)
     response.raise_for_status()
     return response.json()
-
 
 def save_picture_on_vk(server, _hash, photo, access_token, group_id):
     params = {
@@ -67,7 +61,6 @@ def save_picture_on_vk(server, _hash, photo, access_token, group_id):
     saved_photo = vk_response["response"][0]
     return saved_photo["owner_id"], saved_photo["id"]
 
-
 def publish_picture_on_wall(owner_id, attachment_id, message, access_token, group_id):
     params = {
         "access_token": access_token,
@@ -81,6 +74,10 @@ def publish_picture_on_wall(owner_id, attachment_id, message, access_token, grou
     response.raise_for_status()
     check_vk_errors(response.json())
 
+def remove_temp_file(file_name, folder="Files"):
+    file_path = os.path.join(folder, file_name)
+    if os.path.exists(file_path):
+        os.remove(file_path)
 
 def main():
     load_dotenv()
@@ -91,6 +88,8 @@ def main():
     except KeyError as e:
         print(f"Ошибка: переменная окружения {str(e)} не установлена.")
         return
+
+    file_name = None
 
     try:
         comic = get_comic()
@@ -105,8 +104,6 @@ def main():
 
         print("Загрузка изображения на сервер...")
         upload_response = upload_picture(file_name, upload_url)
-
-        os.remove(os.path.join("Files", file_name))
 
         print("Сохранение изображения...")
         owner_id, attachment_id = save_picture_on_vk(
@@ -124,11 +121,11 @@ def main():
 
     except requests.RequestException as error:
         print(f"Ошибка при обработке данных: {error}")
-        if os.path.exists(os.path.join("Files", file_name)):
-            os.remove(os.path.join("Files", file_name))
     except Exception as error:
         print(f"Неизвестная ошибка: {error}")
-
+    finally:
+        if file_name:
+            remove_temp_file(file_name)
 
 if __name__ == "__main__":
     main()
