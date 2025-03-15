@@ -8,7 +8,13 @@ VK_API_URL = "https://api.vk.com/method"
 VK_API_VERSION = "5.131"
 
 
+def create_folder(folder="Files"):
+    """Создает папку, если она не существует."""
+    os.makedirs(folder, exist_ok=True)
+
+
 def get_comic():
+    """Получает случайный комикс с сайта xkcd."""
     url = "https://xkcd.com/info.0.json"
     response = requests.get(url)
     response.raise_for_status()
@@ -16,14 +22,15 @@ def get_comic():
 
 
 def check_vk_errors(response):
+    """Проверяет наличие ошибок в ответе VK API."""
     if "error" in response:
         raise Exception(f"VK API Error: {response['error']['error_msg']}")
     return response
 
 
 def download_picture(picture_url, folder="Files"):
+    """Скачивает изображение по заданному URL."""
     file_name = os.path.basename(urlsplit(picture_url).path)
-    os.makedirs(folder, exist_ok=True)
     response = requests.get(picture_url)
     response.raise_for_status()
     file_path = os.path.join(folder, file_name)
@@ -33,6 +40,7 @@ def download_picture(picture_url, folder="Files"):
 
 
 def get_upload_url(access_token, group_id):
+    """Получает URL для загрузки изображения на сервер VK."""
     params = {
         "access_token": access_token,
         "v": VK_API_VERSION,
@@ -44,6 +52,7 @@ def get_upload_url(access_token, group_id):
 
 
 def upload_picture(file_name, upload_url, folder="Files"):
+    """Загружает изображение на сервер VK."""
     file_path = os.path.join(folder, file_name)
     with open(file_path, "rb") as file:
         files = {"photo": file}
@@ -52,13 +61,14 @@ def upload_picture(file_name, upload_url, folder="Files"):
     return response.json()
 
 
-def save_picture_on_vk(server, _hash, photo, access_token, group_id):
+def save_picture_on_vk(server, photo_hash, photo, access_token, group_id):
+    """Сохраняет изображение на сервере VK."""
     params = {
         "access_token": access_token,
         "v": VK_API_VERSION,
         "group_id": group_id,
         "server": server,
-        "hash": _hash,
+        "hash": photo_hash,
         "photo": photo
     }
     response = requests.post(f"{VK_API_URL}/photos.saveWallPhoto", params=params)
@@ -69,6 +79,7 @@ def save_picture_on_vk(server, _hash, photo, access_token, group_id):
 
 
 def publish_picture_on_wall(owner_id, attachment_id, message, access_token, group_id):
+    """Публикует изображение на стене группы VK."""
     params = {
         "access_token": access_token,
         "v": VK_API_VERSION,
@@ -83,6 +94,7 @@ def publish_picture_on_wall(owner_id, attachment_id, message, access_token, grou
 
 
 def remove_temp_file(file_name, folder="Files"):
+    """Удаляет временный файл."""
     file_path = os.path.join(folder, file_name)
     if os.path.exists(file_path):
         os.remove(file_path)
@@ -92,15 +104,19 @@ def main():
     load_dotenv()
 
     try:
-        vk_access_token = os.environ["VK_ACCESS_TOKEN"]
-        vk_client_id = os.environ["VK_CLIENT_ID"]
-    except KeyError as e:
-        print(f"Ошибка: переменная окружения {str(e)} не установлена.")
+        vk_access_token = os.getenv("VK_ACCESS_TOKEN")
+        vk_client_id = os.getenv("VK_CLIENT_ID")
+        if not vk_access_token or not vk_client_id:
+            raise EnvironmentError("Переменные окружения не установлены.")
+    except EnvironmentError as e:
+        print(f"Ошибка: {e}")
         return
 
     file_name = None
 
     try:
+        create_folder()
+
         comic = get_comic()
         comic_img_url = comic["img"]
         comic_alt_text = comic["alt"]
@@ -114,7 +130,7 @@ def main():
         print("Загрузка изображения на сервер...")
         upload_response = upload_picture(file_name, upload_url)
 
-        print("Сохранение изображения...")
+        print("Сохранение изображения на сервере VK...")
         owner_id, attachment_id = save_picture_on_vk(
             upload_response["server"],
             upload_response["hash"],
@@ -124,13 +140,7 @@ def main():
         )
 
         print("Публикация изображения на стене группы...")
-        publish_picture_on_wall(
-            owner_id,
-            attachment_id,
-            comic_alt_text,
-            vk_access_token,
-            vk_client_id
-        )
+        publish_picture_on_wall(owner_id, attachment_id, comic_alt_text, vk_access_token, vk_client_id)
 
         print("Публикация завершена успешно!")
 
