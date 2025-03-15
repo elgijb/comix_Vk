@@ -9,12 +9,10 @@ VK_API_VERSION = "5.131"
 
 
 def create_folder(folder="Files"):
-    """Создает папку, если она не существует."""
     os.makedirs(folder, exist_ok=True)
 
 
 def get_comic():
-    """Получает случайный комикс с сайта xkcd."""
     url = "https://xkcd.com/info.0.json"
     response = requests.get(url)
     response.raise_for_status()
@@ -22,14 +20,12 @@ def get_comic():
 
 
 def check_vk_errors(response):
-    """Проверяет наличие ошибок в ответе VK API."""
     if "error" in response:
         raise Exception(f"VK API Error: {response['error']['error_msg']}")
     return response
 
 
 def download_picture(picture_url, folder="Files"):
-    """Скачивает изображение по заданному URL."""
     file_name = os.path.basename(urlsplit(picture_url).path)
     response = requests.get(picture_url)
     response.raise_for_status()
@@ -40,7 +36,6 @@ def download_picture(picture_url, folder="Files"):
 
 
 def get_upload_url(access_token, group_id):
-    """Получает URL для загрузки изображения на сервер VK."""
     params = {
         "access_token": access_token,
         "v": VK_API_VERSION,
@@ -52,7 +47,6 @@ def get_upload_url(access_token, group_id):
 
 
 def upload_picture(file_name, upload_url, folder="Files"):
-    """Загружает изображение на сервер VK."""
     file_path = os.path.join(folder, file_name)
     with open(file_path, "rb") as file:
         files = {"photo": file}
@@ -62,7 +56,6 @@ def upload_picture(file_name, upload_url, folder="Files"):
 
 
 def save_picture_on_vk(server, photo_hash, photo, access_token, group_id):
-    """Сохраняет изображение на сервере VK."""
     params = {
         "access_token": access_token,
         "v": VK_API_VERSION,
@@ -79,7 +72,6 @@ def save_picture_on_vk(server, photo_hash, photo, access_token, group_id):
 
 
 def publish_picture_on_wall(owner_id, attachment_id, message, access_token, group_id):
-    """Публикует изображение на стене группы VK."""
     params = {
         "access_token": access_token,
         "v": VK_API_VERSION,
@@ -94,7 +86,6 @@ def publish_picture_on_wall(owner_id, attachment_id, message, access_token, grou
 
 
 def remove_temp_file(file_name, folder="Files"):
-    """Удаляет временный файл."""
     file_path = os.path.join(folder, file_name)
     if os.path.exists(file_path):
         os.remove(file_path)
@@ -102,7 +93,6 @@ def remove_temp_file(file_name, folder="Files"):
 
 def main():
     load_dotenv()
-
     try:
         vk_access_token = os.getenv("VK_ACCESS_TOKEN")
         vk_client_id = os.getenv("VK_CLIENT_ID")
@@ -116,20 +106,15 @@ def main():
 
     try:
         create_folder()
-
         comic = get_comic()
         comic_img_url = comic["img"]
         comic_alt_text = comic["alt"]
-
         print("Скачивание изображения...")
         file_name = download_picture(comic_img_url)
-
         print("Получение URL для загрузки на сервер ВКонтакте...")
         upload_url = get_upload_url(vk_access_token, vk_client_id)
-
         print("Загрузка изображения на сервер...")
         upload_response = upload_picture(file_name, upload_url)
-
         print("Сохранение изображения на сервере VK...")
         owner_id, attachment_id = save_picture_on_vk(
             upload_response["server"],
@@ -138,12 +123,9 @@ def main():
             vk_access_token,
             vk_client_id
         )
-
         print("Публикация изображения на стене группы...")
         publish_picture_on_wall(owner_id, attachment_id, comic_alt_text, vk_access_token, vk_client_id)
-
         print("Публикация завершена успешно!")
-
     except requests.RequestException as error:
         print(f"Ошибка при обработке данных: {error}")
     except Exception as error:
