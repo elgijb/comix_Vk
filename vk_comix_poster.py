@@ -1,5 +1,4 @@
 import os
-import random
 import requests
 from urllib.parse import urlsplit
 from dotenv import load_dotenv
@@ -7,25 +6,14 @@ from dotenv import load_dotenv
 VK_API_URL = "https://api.vk.com/method"
 VK_API_VERSION = "5.131"
 
-
-def create_folder(folder="Files"):
-    os.makedirs(folder, exist_ok=True)
-
-
 def get_comic():
     url = "https://xkcd.com/info.0.json"
     response = requests.get(url)
     response.raise_for_status()
     return response.json()
 
-
-def check_vk_errors(response):
-    if "error" in response:
-        raise Exception(f"VK API Error: {response['error']['error_msg']}")
-    return response
-
-
 def download_picture(picture_url, folder="Files"):
+    os.makedirs(folder, exist_ok=True)
     file_name = os.path.basename(urlsplit(picture_url).path)
     response = requests.get(picture_url)
     response.raise_for_status()
@@ -33,7 +21,6 @@ def download_picture(picture_url, folder="Files"):
     with open(file_path, "wb") as file:
         file.write(response.content)
     return file_name
-
 
 def get_upload_url(access_token, group_id):
     params = {
@@ -43,8 +30,7 @@ def get_upload_url(access_token, group_id):
     }
     response = requests.get(f"{VK_API_URL}/photos.getWallUploadServer", params=params)
     response.raise_for_status()
-    return check_vk_errors(response.json())["response"]["upload_url"]
-
+    return response.json()["response"]["upload_url"]
 
 def upload_picture(file_name, upload_url, folder="Files"):
     file_path = os.path.join(folder, file_name)
@@ -53,7 +39,6 @@ def upload_picture(file_name, upload_url, folder="Files"):
         response = requests.post(upload_url, files=files)
     response.raise_for_status()
     return response.json()
-
 
 def save_picture_on_vk(server, photo_hash, photo, access_token, group_id):
     params = {
@@ -66,10 +51,8 @@ def save_picture_on_vk(server, photo_hash, photo, access_token, group_id):
     }
     response = requests.post(f"{VK_API_URL}/photos.saveWallPhoto", params=params)
     response.raise_for_status()
-    vk_response = check_vk_errors(response.json())
-    saved_photo = vk_response["response"][0]
+    saved_photo = response.json()["response"][0]
     return saved_photo["owner_id"], saved_photo["id"]
-
 
 def publish_picture_on_wall(owner_id, attachment_id, message, access_token, group_id):
     params = {
@@ -82,14 +65,6 @@ def publish_picture_on_wall(owner_id, attachment_id, message, access_token, grou
     }
     response = requests.post(f"{VK_API_URL}/wall.post", params=params)
     response.raise_for_status()
-    check_vk_errors(response.json())
-
-
-def remove_temp_file(file_name, folder="Files"):
-    file_path = os.path.join(folder, file_name)
-    if os.path.exists(file_path):
-        os.remove(file_path)
-
 
 def main():
     load_dotenv()
@@ -103,9 +78,7 @@ def main():
         return
 
     file_name = None
-
     try:
-        create_folder()
         comic = get_comic()
         comic_img_url = comic["img"]
         comic_alt_text = comic["alt"]
@@ -132,8 +105,10 @@ def main():
         print(f"Неизвестная ошибка: {error}")
     finally:
         if file_name:
-            remove_temp_file(file_name)
-
+            try:
+                os.remove(os.path.join("Files", file_name))
+            except OSError as e:
+                print(f"Ошибка удаления файла: {e}")
 
 if __name__ == "__main__":
     main()
